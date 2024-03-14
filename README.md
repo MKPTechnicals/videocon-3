@@ -1,5 +1,10 @@
 # Simple Web-Based Video Conferencing Application with PeerJS (Videocon-3)
 
+![HTML Badge](https://img.shields.io/badge/language-HTML-orange.svg)
+![CSS Badge](https://img.shields.io/badge/language-CSS-blue.svg)
+![JavaScript Badge](https://img.shields.io/badge/language-JavaScript-yellow.svg)
+![PeerJS Badge](https://img.shields.io/badge/library-PeerJS-lightgrey.svg)
+
 This repository contains a simple web application for conducting a 3-way video conference using WebRTC (Web Real-Time Communication) technology. Users can connect with two remote peers and engage in video communication.
 
 ## Features
