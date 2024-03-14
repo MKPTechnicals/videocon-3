@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conferencing</title>
+    <style>
+        /* General styles */
+        body {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          font-family: Arial, sans-serif;
+          background-color: #f5f5f5; /* Light background color */
+        }
+    
+        #video-container {
+          display: flex;
+          flex-wrap: wrap; /* Allow videos to wrap if needed */
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+    
+        video {
+          max-width: 320px; /* Set a maximum width for responsiveness */
+          max-height: 240px; /* Set a maximum height for responsiveness */
+          border: 1px solid #ccc;
+          margin: 10px; /* Add margin between videos */
+        }
+    
+        #controls {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          width: 100%;
+          max-width: 400px; /* Limit controls width */
+          margin: 0 auto; /* Center controls horizontally */
+        }
+    
+        label {
+          font-weight: bold;
+        }
+    
+        button {
+          padding: 10px 20px; /* Increase button padding */
+          font-size: 16px;
+          cursor: pointer;
+          border: none;
+          border-radius: 5px;
+          background-color: #3498db; /* Blue button color */
+          color: white;
+          transition: background-color 0.2s ease-in-out;
+        }
+    
+        button:hover {
+          background-color: #2980b9; /* Darker blue on hover */
+        }
+    
+        button:disabled {
+          cursor: not-allowed;
+          background-color: #ccc; /* Disabled button color */
+          color: #999;
+        }
+    
+        #peer-id-display {
+          margin-top: 10px;
+          text-align: center;
+        }
+      </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="local-video" autoplay muted></video>
+        <video id="remote-video-1" autoplay></video>
+        <video id="remote-video-2" autoplay></video>
+    </div>
+    <div id="controls">
+        <label for="peer-id">Your Peer ID:</label>
+        <input type="text" id="peer-id" placeholder="Enter your Peer ID">
+        <label for="remote-peer-id-1">Enter Remote Peer ID 1:</label>
+        <input type="text" id="remote-peer-id-1">
+        <button id="connect-btn-1">Connect 1</button>
+        <label for="remote-peer-id-2">Enter Remote Peer ID 2:</label>
+        <input type="text" id="remote-peer-id-2">
+        <button id="connect-btn-2">Connect 2</button>
+        <button id="start-btn">Start</button>
+        <button id="stop-btn" disabled>Stop</button>
+    </div>
+    <div id="peer-id-display"></div>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const localVideo = document.getElementById('local-video');
+            const remoteVideo1 = document.getElementById('remote-video-1');
+            const remoteVideo2 = document.getElementById('remote-video-2');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const connectBtn1 = document.getElementById('connect-btn-1');
+            const connectBtn2 = document.getElementById('connect-btn-2');
+            const peerIdDisplay = document.getElementById('peer-id-display');
+            const peerIdInput = document.getElementById('peer-id');
+            const remotePeerIdInput1 = document.getElementById('remote-peer-id-1');
+            const remotePeerIdInput2 = document.getElementById('remote-peer-id-2');
+
+            let localStream;
+            let peer;
+            let remoteVideoElements = {};
+
+            connectBtn1.addEventListener('click', () => {
+                const enteredPeerId = remotePeerIdInput1.value.trim();
+                if (enteredPeerId !== "") {
+                    initiateConnection(enteredPeerId, remoteVideo1);
+                } else {
+                    alert('Please enter a valid Remote Peer ID.');
+                }
+            });
+
+            connectBtn2.addEventListener('click', () => {
+                const enteredPeerId = remotePeerIdInput2.value.trim();
+                if (enteredPeerId !== "") {
+                    initiateConnection(enteredPeerId, remoteVideo2);
+                } else {
+                    alert('Please enter a valid Remote Peer ID.');
+                }
+            });
+
+            startBtn.addEventListener('click', async () => {
+                try {
+                    const enteredPeerId = peerIdInput.value.trim();
+                    if (enteredPeerId === "") {
+                        alert('Please enter your Peer ID.');
+                        return;
+                    }
+
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    localVideo.srcObject = localStream;
+
+                    peer = new Peer(enteredPeerId);
+
+                    peer.on('open', (id) => {
+                        console.log('My peer ID is: ' + id);
+                        peerIdDisplay.textContent = 'Your Peer ID: ' + id;
+                    });
+
+                    peer.on('call', (call) => {
+                        call.answer(localStream);
+                        call.on('stream', (remoteStream) => {
+                            // Determine which remote video element to use based on the call's ID
+                            const remoteVideoElement = remoteVideoElements[call.peer];
+                            if (remoteVideoElement) {
+                                remoteVideoElement.srcObject = remoteStream;
+                            }
+
+                            // Display connected Peer IDs
+                            const connectedPeerIds = Object.keys(remoteVideoElements).join(', ');
+                            peerIdDisplay.textContent = `Connected with Peer IDs: ${connectedPeerIds}`;
+                        });
+                    });
+
+                    stopBtn.removeAttribute('disabled');
+                    startBtn.setAttribute('disabled', 'true');
+                } catch (error) {
+                    console.error('Error accessing media devices:', error);
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localVideo.srcObject = null;
+                }
+
+                if (peer) {
+                    peer.disconnect();
+                }
+
+                for (let peerId in remoteVideoElements) {
+                    remoteVideoElements[peerId].srcObject = null;
+                }
+
+                remoteVideoElements = {};
+
+                stopBtn.setAttribute('disabled', 'true');
+                startBtn.removeAttribute('disabled');
+                peerIdDisplay.textContent = ''; // Clear Peer ID display
+            });
+
+            function initiateConnection(remotePeerId, remoteVideoElement) {
+                if (localStream) {
+                    const call = peer.call(remotePeerId, localStream);
+
+                    call.on('stream', (remoteStream) => {
+                        remoteVideoElement.srcObject = remoteStream;
+                        remoteVideoElements[remotePeerId] = remoteVideoElement;
+                    });
+                } else {
+                    alert('Please start your video before connecting.');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
