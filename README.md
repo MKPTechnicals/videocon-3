@@ -1,4 +1,4 @@
-# 3 - Way Video Conference (Videocon - 3)
+# 3 - Simple Web-Based Video Conferencing Application with PeerJS (Videocon-3)
 
 This repository contains a simple web application for conducting a 3-way video conference using WebRTC (Web Real-Time Communication) technology. Users can connect with two remote peers and engage in video communication.
 
