@@ -24,6 +24,12 @@ This repository contains a simple web application for conducting a 3-way video c
 5. Once all connections are established, click on the "Start" button to begin the video conference.
 6. To stop the conference, click on the "Stop" button.
 
+**Note**: Please edit the CSS styles in `styles.css` according to your usage and design preferences.
+
+## Demo
+
+Try out a demo of this application [videocon](https://healthgate.free.nf/frontend/video.html).
+
 ## Requirements
 
 - Compatible web browser with WebRTC support (Google Chrome, Mozilla Firefox recommended).
